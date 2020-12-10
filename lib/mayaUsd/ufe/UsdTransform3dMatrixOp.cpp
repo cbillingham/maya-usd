@@ -119,22 +119,12 @@ class UsdTranslateUndoableCmd
 {
 public:
     UsdTranslateUndoableCmd(
-#if UFE_PREVIEW_VERSION_NUM >= 2021
         const Ufe::Path& path,
-#else
-        const UsdSceneItem::Ptr& item,
-#endif
         const UsdGeomXformOp& op,
         const UsdTimeCode&    writeTime
-#if UFE_PREVIEW_VERSION_NUM >= 2021
         )
         : Ufe::TranslateUndoableCommand(path)
         , UsdTRSUndoableCmdBase(path, op, writeTime)
-#else
-        )
-        : Ufe::TranslateUndoableCommand(item)
-        , UsdTRSUndoableCmdBase(item->path(), op, writeTime)
-#endif
     {
         fOpTransform = op.GetOpTransform(readTime());
     }
@@ -163,22 +153,12 @@ class UsdRotateUndoableCmd
 
 public:
     UsdRotateUndoableCmd(
-#if UFE_PREVIEW_VERSION_NUM >= 2021
         const Ufe::Path& path,
-#else
-        const UsdSceneItem::Ptr& item,
-#endif
         const UsdGeomXformOp& op,
         const UsdTimeCode&    writeTime
-#if UFE_PREVIEW_VERSION_NUM >= 2021
         )
         : Ufe::RotateUndoableCommand(path)
         , UsdTRSUndoableCmdBase(path, op, writeTime)
-#else
-        )
-        : Ufe::RotateUndoableCommand(item)
-        , UsdTRSUndoableCmdBase(item->path(), op, writeTime)
-#endif
     {
         GfMatrix4d opTransform = op.GetOpTransform(readTime());
 
@@ -226,22 +206,12 @@ class UsdScaleUndoableCmd
 
 public:
     UsdScaleUndoableCmd(
-#if UFE_PREVIEW_VERSION_NUM >= 2021
         const Ufe::Path& path,
-#else
-        const UsdSceneItem::Ptr& item,
-#endif
         const UsdGeomXformOp& op,
         const UsdTimeCode&    writeTime
-#if UFE_PREVIEW_VERSION_NUM >= 2021
         )
         : Ufe::ScaleUndoableCommand(path)
         , UsdTRSUndoableCmdBase(path, op, writeTime)
-#else
-        )
-        : Ufe::ScaleUndoableCommand(item)
-        , UsdTRSUndoableCmdBase(item->path(), op, writeTime)
-#endif
     {
         GfMatrix4d opTransform = op.GetOpTransform(readTime());
 
@@ -322,11 +292,7 @@ Ufe::TranslateUndoableCommand::Ptr
 UsdTransform3dMatrixOp::translateCmd(double x, double y, double z)
 {
     return std::make_shared<UsdTranslateUndoableCmd>(
-#if UFE_PREVIEW_VERSION_NUM >= 2021
         path(),
-#else
-        usdSceneItem(),
-#endif
         _op,
         UsdTimeCode::Default());
 }
@@ -334,11 +300,7 @@ UsdTransform3dMatrixOp::translateCmd(double x, double y, double z)
 Ufe::RotateUndoableCommand::Ptr UsdTransform3dMatrixOp::rotateCmd(double x, double y, double z)
 {
     return std::make_shared<UsdRotateUndoableCmd>(
-#if UFE_PREVIEW_VERSION_NUM >= 2021
         path(),
-#else
-        usdSceneItem(),
-#endif
         _op,
         UsdTimeCode::Default());
 }
@@ -346,11 +308,7 @@ Ufe::RotateUndoableCommand::Ptr UsdTransform3dMatrixOp::rotateCmd(double x, doub
 Ufe::ScaleUndoableCommand::Ptr UsdTransform3dMatrixOp::scaleCmd(double x, double y, double z)
 {
     return std::make_shared<UsdScaleUndoableCmd>(
-#if UFE_PREVIEW_VERSION_NUM >= 2021
         path(),
-#else
-        usdSceneItem(),
-#endif
         _op,
         UsdTimeCode::Default());
 }
