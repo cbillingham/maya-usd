@@ -57,6 +57,10 @@ public:
     inline UsdSceneItem::Ptr usdSceneItem() const { return fItem; }
     inline UsdPrim           prim() const { return fPrim; }
 
+    Ufe::Vector3d translation() const override;
+    Ufe::Vector3d rotation() const override;
+    Ufe::Vector3d scale() const override;
+
     Ufe::TranslateUndoableCommand::Ptr translateCmd(double x, double y, double z) override;
     Ufe::RotateUndoableCommand::Ptr    rotateCmd(double x, double y, double z) override;
     Ufe::ScaleUndoableCommand::Ptr     scaleCmd(double x, double y, double z) override;

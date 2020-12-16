@@ -16,6 +16,7 @@
 #include "UsdTransform3dBase.h"
 
 #include <mayaUsd/ufe/Utils.h>
+#include <mayaUsd/ufe/XformOpUtils.h>
 
 #include <pxr/usd/usdGeom/xformCache.h>
 #include <pxr/usd/usdGeom/xformCommonAPI.h>
@@ -33,6 +34,34 @@ UsdTransform3dBase::UsdTransform3dBase(const UsdSceneItem::Ptr& item)
 const Ufe::Path& UsdTransform3dBase::path() const { return fItem->path(); }
 
 Ufe::SceneItem::Ptr UsdTransform3dBase::sceneItem() const { return fItem; }
+
+Ufe::Vector3d UsdTransform3dBase::translation() const
+{
+    auto ops = getOrderedXformOps(prim());
+    auto local = computeLocalInclusiveTransform(ops, ops.end(), getTime(path()));
+    return toUfe(local.ExtractTranslation());
+}
+
+Ufe::Vector3d UsdTransform3dBase::rotation() const
+{
+    auto ops = getOrderedXformOps(prim());
+    auto local = computeLocalInclusiveTransform(ops, ops.end(), getTime(path()));
+    return toUfe(local.DecomposeRotation(GfVec3d::XAxis(), GfVec3d::YAxis(), GfVec3d::ZAxis()));
+}
+
+Ufe::Vector3d UsdTransform3dBase::scale() const
+{
+    auto       ops = getOrderedXformOps(prim());
+    auto       local = computeLocalInclusiveTransform(ops, ops.end(), getTime(path()));
+    GfMatrix4d unusedR, unusedP, unusedU;
+    GfVec3d    s, unusedT;
+    if (!local.Factor(&unusedR, &s, &unusedU, &unusedT, &unusedP)) {
+        TF_WARN("Cannot decompose local transform for %s", pathCStr());
+        return Ufe::Vector3d(1, 1, 1);
+    }
+
+    return toUfe(s);
+}
 
 Ufe::TranslateUndoableCommand::Ptr
 UsdTransform3dBase::translateCmd(double /* x */, double /* y */, double /* z */)

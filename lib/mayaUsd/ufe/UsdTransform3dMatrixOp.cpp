@@ -265,22 +265,21 @@ UsdTransform3dMatrixOp::create(const UsdSceneItem::Ptr& item, const UsdGeomXform
 
 Ufe::Vector3d UsdTransform3dMatrixOp::translation() const
 {
-    auto local = computeLocalInclusiveTransform(prim(), _op, getTime(path()));
-    return toUfe(local.ExtractTranslation());
+    return toUfe(_op.GetOpTransform(getTime(path())).ExtractTranslation());
 }
 
 Ufe::Vector3d UsdTransform3dMatrixOp::rotation() const
 {
-    auto local = computeLocalInclusiveTransform(prim(), _op, getTime(path()));
-    return toUfe(local.DecomposeRotation(GfVec3d::XAxis(), GfVec3d::YAxis(), GfVec3d::ZAxis()));
+    return toUfe(_op.GetOpTransform(getTime(path())).DecomposeRotation(
+        GfVec3d::XAxis(), GfVec3d::YAxis(), GfVec3d::ZAxis()));
 }
 
 Ufe::Vector3d UsdTransform3dMatrixOp::scale() const
 {
-    auto       local = computeLocalInclusiveTransform(prim(), _op, getTime(path()));
+    auto       m = _op.GetOpTransform(getTime(path()));
     GfMatrix4d unusedR, unusedP, unusedU;
     GfVec3d    s, unusedT;
-    if (!local.Factor(&unusedR, &s, &unusedU, &unusedT, &unusedP)) {
+    if (!m.Factor(&unusedR, &s, &unusedU, &unusedT, &unusedP)) {
         TF_WARN("Cannot decompose local transform for %s", pathCStr());
         return Ufe::Vector3d(1, 1, 1);
     }
@@ -383,29 +382,29 @@ Ufe::Transform3d::Ptr UsdTransform3dMatrixOpHandler::editTransform3d(
 
     // We try to edit a matrix op in the prim's transform op stack.  If a
     // matrix op has been specified, it will be used if found.  If a matrix op
-    // has not been specified, we edit the first matrix op in the stack.  If
+    // has not been specified, we edit the last matrix op in the stack.  If
     // the matrix op is not found, or there is no matrix op in the stack, let
     // the next Transform3d handler in the chain handle the request.
     auto             opName = getMatrixOp();
     UsdGeomXformable xformable(usdItem->prim());
     bool             unused;
     auto             xformOps = xformable.GetOrderedXformOps(&unused);
-    auto i = std::find_if(xformOps.begin(), xformOps.end(), [opName](const UsdGeomXformOp& op) {
+    auto i = std::find_if(xformOps.rbegin(), xformOps.rend(), [opName](const UsdGeomXformOp& op) {
         return (op.GetOpType() == UsdGeomXformOp::TypeTransform)
             && (!opName || std::string(opName) == op.GetOpName());
     });
-    bool foundMatrix = (i != xformOps.end());
+    bool foundMatrix = (i != xformOps.rend());
 
     // If we've found a matrix op, but there is a more local non-matrix op in
     // the stack, the more local op should be used to handle the edit.
     bool moreLocalNonMatrix = foundMatrix
         ? (std::find_if(
+               xformOps.rbegin(),
                i,
-               xformOps.end(),
                [](const UsdGeomXformOp& op) {
                    return op.GetOpType() != UsdGeomXformOp::TypeTransform;
                })
-           != xformOps.end())
+           != i)
         : false;
 
     // We can't handle pivot edits, so in that case pass on to the next handler.
