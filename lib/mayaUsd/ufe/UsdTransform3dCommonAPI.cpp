@@ -311,6 +311,11 @@ UsdTransform3dCommonAPIHandler::UsdTransform3dCommonAPIHandler(
 {
 }
 
+// Create a Transform3d interface for the USD common transform API.  There
+// cannot be any transform ops in the prim aside from those allowed in the USD
+// common transform API, and it is not possible to edit an individual transform
+// op within the USD common transform API.  Therefore, editTransform3d() and
+// transform3d() can return the same interface.
 /*static*/
 UsdTransform3dCommonAPIHandler::Ptr
 UsdTransform3dCommonAPIHandler::create(const Ufe::Transform3dHandler::Ptr& nextHandler)
@@ -335,11 +340,8 @@ UsdTransform3dCommonAPIHandler::transform3d(const Ufe::SceneItem::Ptr& item) con
 }
 
 Ufe::Transform3d::Ptr UsdTransform3dCommonAPIHandler::editTransform3d(
-    const Ufe::SceneItem::Ptr& item
-#if UFE_PREVIEW_VERSION_NUM >= 2030
-    ,
+    const Ufe::SceneItem::Ptr&      item,
     const Ufe::EditTransform3dHint& hint
-#endif
 ) const
 {
     UsdSceneItem::Ptr usdItem = std::dynamic_pointer_cast<UsdSceneItem>(item);
@@ -355,13 +357,7 @@ Ufe::Transform3d::Ptr UsdTransform3dCommonAPIHandler::editTransform3d(
     auto commonAPI = UsdGeomXformCommonAPI(usdItem->prim());
 
     return commonAPI ? UsdTransform3dCommonAPI::create(usdItem)
-                     : _nextHandler->editTransform3d(
-                         item
-#if UFE_PREVIEW_VERSION_NUM >= 2030
-                         ,
-                         hint
-#endif
-                     );
+                     : _nextHandler->editTransform3d(item, hint);
 }
 
 } // namespace ufe

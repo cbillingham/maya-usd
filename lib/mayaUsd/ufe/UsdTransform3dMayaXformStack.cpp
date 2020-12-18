@@ -120,6 +120,11 @@ void setXformOpOrder(const UsdGeomXformable& xformable)
 
 using NextTransform3dFn = std::function<Ufe::Transform3d::Ptr()>;
 
+// Create a Transform3d interface for the Maya transform stack.  We require
+// that there cannot be any transform ops in the prim aside from those allowed
+// in the Maya transform stack, and it is not possible to edit an individual
+// transform op within the Maya transform stack.  Therefore, editTransform3d()
+// and transform3d() can return the same interface.
 Ufe::Transform3d::Ptr
 createTransform3d(const Ufe::SceneItem::Ptr& item, NextTransform3dFn nextTransform3dFn)
 {
@@ -726,21 +731,12 @@ UsdTransform3dMayaXformStackHandler::transform3d(const Ufe::SceneItem::Ptr& item
 }
 
 Ufe::Transform3d::Ptr UsdTransform3dMayaXformStackHandler::editTransform3d(
-    const Ufe::SceneItem::Ptr& item
-#if UFE_PREVIEW_VERSION_NUM >= 2030
-    ,
+    const Ufe::SceneItem::Ptr&      item,
     const Ufe::EditTransform3dHint& hint
-#endif
 ) const
 {
     return createTransform3d(item, [&]() {
-        return _nextHandler->editTransform3d(
-            item
-#if UFE_PREVIEW_VERSION_NUM >= 2030
-            ,
-            hint
-#endif
-        );
+        return _nextHandler->editTransform3d(item, hint);
     });
 }
 

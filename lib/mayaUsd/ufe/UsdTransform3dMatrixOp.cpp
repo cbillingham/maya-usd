@@ -17,6 +17,7 @@
 
 #include <mayaUsd/ufe/UsdSceneItem.h>
 #include <mayaUsd/ufe/Utils.h>
+#include <mayaUsd/ufe/XformOpUtils.h>
 
 #include <pxr/base/gf/rotation.h>
 #include <pxr/base/gf/transform.h>
@@ -40,41 +41,6 @@ VtValue getValue(const UsdAttribute& attr, const UsdTimeCode& time)
 }
 
 const char* getMatrixOp() { return std::getenv("MAYA_USD_MATRIX_XFORM_OP_NAME"); }
-
-template <bool INCLUSIVE>
-GfMatrix4d
-computeLocalTransform(const UsdPrim& prim, const UsdGeomXformOp& op, const UsdTimeCode& time)
-{
-    UsdGeomXformable xformable(prim);
-    bool             unused;
-    auto             ops = xformable.GetOrderedXformOps(&unused);
-
-    // FIXME  Searching for transform op in vector is awkward, as we've likely
-    // already done this to create the UsdTransform3dMatrixOp object itself.
-    // PPT, 10-Aug-2020.
-    auto i = std::find(ops.begin(), ops.end(), op);
-
-    if (i == ops.end()) {
-        TF_FATAL_ERROR("Matrix op %s not found in transform ops.", op.GetOpName().GetText());
-    }
-    // If we want the op to be included, increment i.
-    if (INCLUSIVE) {
-        ++i;
-    }
-    std::vector<UsdGeomXformOp> cfOps(std::distance(ops.begin(), i));
-    cfOps.assign(ops.begin(), i);
-
-    GfMatrix4d m(1);
-    if (!UsdGeomXformable::GetLocalTransformation(&m, cfOps, time)) {
-        TF_FATAL_ERROR(
-            "Local transformation computation for prim %s failed.", prim.GetPath().GetText());
-    }
-
-    return m;
-}
-
-auto computeLocalInclusiveTransform = computeLocalTransform<true>;
-auto computeLocalExclusiveTransform = computeLocalTransform<false>;
 
 // Helper class to factor out common code for translate, rotate, scale
 // undoable commands.
@@ -318,7 +284,13 @@ Ufe::Matrix4d UsdTransform3dMatrixOp::segmentInclusiveMatrix() const
     auto              time = getTime(path());
     UsdGeomXformCache xformCache(time);
     auto              parent = xformCache.GetParentToWorldTransform(prim());
-    auto              local = computeLocalInclusiveTransform(prim(), _op, time);
+    auto              ops = getOrderedXformOps(prim());
+    auto              i = std::find(ops.begin(), ops.end(), _op);
+    if (i == ops.end()) {
+        TF_FATAL_ERROR("Matrix op %s not found in transform ops.", _op.GetOpName().GetText());
+        return toUfe(GfMatrix4d(1));
+    }
+    auto              local = computeLocalInclusiveTransform(ops, i, time);
     return toUfe(local * parent);
 }
 
@@ -328,7 +300,13 @@ Ufe::Matrix4d UsdTransform3dMatrixOp::segmentExclusiveMatrix() const
     auto              time = getTime(path());
     UsdGeomXformCache xformCache(time);
     auto              parent = xformCache.GetParentToWorldTransform(prim());
-    auto              local = computeLocalExclusiveTransform(prim(), _op, time);
+    auto              ops = getOrderedXformOps(prim());
+    auto              i = std::find(ops.begin(), ops.end(), _op);
+    if (i == ops.end()) {
+        TF_FATAL_ERROR("Matrix op %s not found in transform ops.", _op.GetOpName().GetText());
+        return toUfe(GfMatrix4d(1));
+    }
+    auto              local = computeLocalExclusiveTransform(ops, i, time);
     return toUfe(local * parent);
 }
 
