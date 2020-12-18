@@ -62,6 +62,9 @@ public:
     Ufe::RotateUndoableCommand::Ptr    rotateCmd(double x, double y, double z) override;
     Ufe::ScaleUndoableCommand::Ptr     scaleCmd(double x, double y, double z) override;
 
+    Ufe::SetMatrix4dUndoableCommand::Ptr setMatrixCmd(const Ufe::Matrix4d& m) override;
+    Ufe::Matrix4d                        matrix() const override;
+
     Ufe::Matrix4d segmentInclusiveMatrix() const override;
     Ufe::Matrix4d segmentExclusiveMatrix() const override;
 
