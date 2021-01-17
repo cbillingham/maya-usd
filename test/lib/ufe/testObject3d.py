@@ -113,6 +113,16 @@ class Object3dTestCase(unittest.TestCase):
         # Get its bounding box.
         ufeBBox = object3d.boundingBox()
 
+        # Check the center point and size
+        if(os.getenv('UFE_PREVIEW_VERSION_NUM', '0000') >= '2036'):
+            self.assertEqual(ufeBBox.size().x(), 2)
+            self.assertEqual(ufeBBox.size().y(), 2)
+            self.assertEqual(ufeBBox.size().z(), 2)
+
+            self.assertEqual(ufeBBox.center().x(), 0)
+            self.assertEqual(ufeBBox.center().y(), 0)
+            self.assertEqual(ufeBBox.center().z(), 0)
+
         # Compare it to known extents.
         assertVectorAlmostEqual(self, ufeBBox.min.vector, [-1]*3)
         assertVectorAlmostEqual(self, ufeBBox.max.vector, [1]*3)
